@@ -24,6 +24,22 @@ describe('Read Artists', () => {
     artists = responses.map(({ rows }) => rows[0])
   })
 
+  describe('GET /artists/{id}', () => {
+    it('returns the artist with the correct id', async () => {
+      const { status, body } = await request(app).get(`/artists/${artists[0].id}`).send()
+
+      expect(status).to.equal(200)
+      expect(body).to.deep.equal(artists[0])
+    })
+
+    it('returns a 404 if the artist does not exist', async () => {
+      const { status, body } = await request(app).get('/artists/999999999').send()
+
+      expect(status).to.equal(404)
+      expect(body.message).to.equal('artist 999999999 does not exist')
+    })
+  })
+
   describe('GET /artists', () => {
     it('returns all artist records in the database', async () => {
       const { status, body } = await request(app).get('/artists').send()
@@ -35,6 +51,35 @@ describe('Read Artists', () => {
         const expected = artists.find((a) => a.id === artistRecord.id)
 
         expect(artistRecord).to.deep.equal(expected)
+      })
+    })
+  })
+
+  describe('Update Artist', () => {
+    let artist
+    beforeEach(async () => {
+      const { rows } = await db.query('INSERT INTO Artists (name, genre) VALUES( $1, $2) RETURNING *', [
+        'Tame Impala',
+        'rock',
+      ])
+  
+      artist = rows[0]
+    })
+  
+    describe('PATCH /artists/{id}', () => {
+      it('updates the artist and returns the updated record', async () => {
+        const { status, body } = await request(app).patch(`/artists/${artist.id}`).send({ name: 'something different', genre: 'rock' })
+  
+        expect(status).to.equal(200)
+  
+        expect(body).to.deep.equal({ id: artist.id, name: 'something different', genre: 'rock' })
+      })
+  
+      it('returns a 404 if the artist does not exist', async () => {
+        const { status, body } = await request(app).patch('/artists/999999999').send({ name: 'something different', genre: 'rock' })
+  
+        expect(status).to.equal(404)
+        expect(body.message).to.equal('artist 999999999 does not exist')
       })
     })
   })
