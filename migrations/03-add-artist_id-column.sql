@@ -1,0 +1,2 @@
+ALTER TABLE Albums
+    ADD COLUMN artist_id INT NOT NULL;
